@@ -34,9 +34,9 @@ public class Robot extends TimedRobot {
 
   //PID Constants
 
-  double Kp = .1;
-  double Ki = 0;
-  double Kd = .0095;
+  double Kp = .09;
+  double Ki = 0.001;
+  double Kd = .004;
   double desiredSpeed = 100;
   double pidOutput;
     
@@ -101,7 +101,7 @@ public class Robot extends TimedRobot {
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
     pidOutput = my_pid.calculate(leftEncoder.getDistance(), desiredSpeed);
-    pidOutput = MathUtil.clamp(-pidOutput, -.4, .4);
+    pidOutput = MathUtil.clamp(-pidOutput, -.6, .6);
 
     m_robotDrive.arcadeDrive(pidOutput, 0);
   }
