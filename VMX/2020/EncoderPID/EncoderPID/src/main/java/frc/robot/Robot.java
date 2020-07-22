@@ -7,9 +7,9 @@
 
 package frc.robot;
 
-//TODO: Tune PID to stop on a dime
 
-import edu.wpi.first.wpilibj.Joystick;
+
+
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.controller.PIDController;
@@ -30,13 +30,27 @@ public class Robot extends TimedRobot {
   private static final int leftEncPortB = 1;
   private static final int rightEncPortA = 2;
   private static final int rightEncPortB = 3;
-  private static final int joystickPort = 0;
 
   //PID Constants
+  //Here is the process I used for guessing the PID Gains...
+  /**
+   * P- Begin by starting at zero and Multiply X10 until it begins to move toward or oscilate.
+   * E.X. 0 -> .0000001
+   * Get as close to setpoint then one more until it oscilates
+   * fine-tune
+   * D- Add damping until it stops the oscillations. Begin with 1/10 of P.
+   * If it Oscilates the entire time, it is too high.
+   * If it does not get to the setpoint, it is too low* 
+   * *Caveat... This is what worked today, but the opposite of what they say, so when all else fails, try something else.
+   * I Add in (starting at 1/10 P) to smooth out any other errors.
+   * 
+   * This is similar (but not the same) as
+   * what is described here https://trickingrockstothink.com/blog_posts/2019/10/19/tuning_pid.html
+   */
 
-  double Kp = .1;
-  double Ki = 0;
-  double Kd = .0095;
+  double Kp = .09;
+  double Ki = 0.001;
+  double Kd = .004;
   double desiredSpeed = 100;
   double pidOutput;
     
@@ -101,7 +115,7 @@ public class Robot extends TimedRobot {
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
     pidOutput = my_pid.calculate(leftEncoder.getDistance(), desiredSpeed);
-    pidOutput = MathUtil.clamp(-pidOutput, -.4, .4);
+    pidOutput = MathUtil.clamp(-pidOutput, -.6, .6);
 
     m_robotDrive.arcadeDrive(pidOutput, 0);
   }
