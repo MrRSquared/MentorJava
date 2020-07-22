@@ -7,7 +7,7 @@
 
 package frc.robot;
 
-//TODO: Tune PID to stop on a dime
+
 
 
 import edu.wpi.first.wpilibj.PWMVictorSPX;
@@ -32,6 +32,21 @@ public class Robot extends TimedRobot {
   private static final int rightEncPortB = 3;
 
   //PID Constants
+  //Here is the process I used for guessing the PID Gains...
+  /**
+   * P- Begin by starting at zero and Multiply X10 until it begins to move toward or oscilate.
+   * E.X. 0 -> .0000001
+   * Get as close to setpoint then one more until it oscilates
+   * fine-tune
+   * D- Add damping until it stops the oscillations. Begin with 1/10 of P.
+   * If it Oscilates the entire time, it is too high.
+   * If it does not get to the setpoint, it is too low* 
+   * *Caveat... This is what worked today, but the opposite of what they say, so when all else fails, try something else.
+   * I Add in (starting at 1/10 P) to smooth out any other errors.
+   * 
+   * This is similar (but not the same) as
+   * what is described here https://trickingrockstothink.com/blog_posts/2019/10/19/tuning_pid.html
+   */
 
   double Kp = .09;
   double Ki = 0.001;
