@@ -9,7 +9,7 @@ package frc.robot;
 
 //TODO: Tune PID to stop on a dime
 
-import edu.wpi.first.wpilibj.Joystick;
+
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.controller.PIDController;
@@ -30,7 +30,6 @@ public class Robot extends TimedRobot {
   private static final int leftEncPortB = 1;
   private static final int rightEncPortA = 2;
   private static final int rightEncPortB = 3;
-  private static final int joystickPort = 0;
 
   //PID Constants
 
