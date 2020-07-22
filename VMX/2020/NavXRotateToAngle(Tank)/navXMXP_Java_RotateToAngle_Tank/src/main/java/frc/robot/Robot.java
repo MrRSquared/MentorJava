@@ -10,29 +10,77 @@ package frc.robot;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.I2C;
-import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
-//TODO Import drive code
+//Import Drive Code
+import edu.wpi.first.wpilibj.PWMVictorSPX;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
+//import encoder
+import edu.wpi.first.wpilibj.Encoder;
+
+//import PID
+import edu.wpi.first.wpilibj.controller.PIDController;
+import edu.wpi.first.wpiutil.math.MathUtil;
+
+
+
 //TODO Add NavX turn code
 //TODO Implement 2020 PID
 //TODO Tune PID
-//TODO CLean Up Code
+//TODO Clean Up Code
 
 public class Robot extends TimedRobot {
 
   AHRS ahrs;
-  Joystick stick;
+  //Setup Constants
+  private static final int leftMotorPort = 0;
+  private static final int rightMotorPort = 1;
+  private static final int leftEncPortA =  0;
+  private static final int leftEncPortB = 1;
+  private static final int rightEncPortA = 2;
+  private static final int rightEncPortB = 3;
+  private static final int joystickPort = 0;
+
+  //PID Gains
+  double Kp = .09;
+  double Ki = 0.001;
+  double Kd = .004;
+  double desiredSpeed = 100;
+  double pidOutput;
+
+  //Instantiate the motors and encoders
+  private final PWMVictorSPX m_leftMotor = new PWMVictorSPX(leftMotorPort);
+  private final PWMVictorSPX m_rightMotor = new PWMVictorSPX(rightMotorPort);
+  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
+  private final XboxController stick = new XboxController(joystickPort);
+
+  private final Encoder leftEncoder = new Encoder(leftEncPortA, leftEncPortB);
+  private final Encoder rightEncoder = new Encoder(rightEncPortA, rightEncPortB);
   
+  //Instantiate the dashboard variables
+  private double leftSpeed;
+  private double rightSpeed;
+  private double leftDistance;
+  private double rightDistance;
+
+  //Instantiate the PIDController
+  PIDController my_pid = new PIDController(Kp, Ki, Kd);
+
   @Override
   public void robotInit() {
-    stick = new Joystick(0);
+    
+    SmartDashboard.putNumber("P", Kp);
+    SmartDashboard.putNumber("I", Ki);
+    SmartDashboard.putNumber("D", Kd);
+
+    //Initialize the NavX
       try {
           /* Communicate w/navX-MXP via the MXP SPI Bus.                                     */
           /* Alternatively:  I2C.Port.kMXP, SerialPort.Port.kMXP or SerialPort.Port.kUSB     */
@@ -93,7 +141,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     Timer.delay(0.020);		/* wait for one motor update time period (50Hz)     */
           
-          boolean zero_yaw_pressed = stick.getTrigger();
+          boolean zero_yaw_pressed = stick.getBButton();
           if ( zero_yaw_pressed ) {
               ahrs.zeroYaw();
           }
@@ -175,6 +223,9 @@ public class Robot extends TimedRobot {
           /* Connectivity Debugging Support                                           */
           SmartDashboard.putNumber(   "IMU_Byte_Count",       ahrs.getByteCount());
           SmartDashboard.putNumber(   "IMU_Update_Count",     ahrs.getUpdateCount());
+          
+          //drive code
+          m_robotDrive.tankDrive(stick.getY(Hand.kLeft), stick.getY(Hand.kRight));
       }
 
   /**
