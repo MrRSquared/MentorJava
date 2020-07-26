@@ -303,7 +303,7 @@ public class Robot extends TimedRobot {
           SmartDashboard.putNumber(   "IMU_Update_Count",     ahrs.getUpdateCount());
           
           //drive code
-          m_robotDrive.tankDrive(stick.getY(Hand.kLeft), stick.getY(Hand.kRight));
+          myRobot.tankDrive(stick.getY(Hand.kLeft), stick.getY(Hand.kRight));
       }
 
   /**
