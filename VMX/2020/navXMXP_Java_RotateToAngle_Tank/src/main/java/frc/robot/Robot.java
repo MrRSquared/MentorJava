@@ -63,44 +63,79 @@ import edu.wpi.first.wpiutil.math.MathUtil;
 
 public class Robot extends TimedRobot {
 
-  AHRS ahrs;
-  //Setup Constants
-  private static final int leftMotorPort = 0;
-  private static final int rightMotorPort = 1;
-  private static final int leftEncPortA =  0;
-  private static final int leftEncPortB = 1;
-  private static final int rightEncPortA = 2;
-  private static final int rightEncPortB = 3;
-  private static final int joystickPort = 0;
 
-  //PID Gains
-  double Kp = .09;
-  double Ki = 0.001;
-  double Kd = .004;
-  double desiredSpeed = 100;
-  double pidOutput;
   //NavX Specific Constants
   static final double kToleranceDegrees = 2.0f;    
     
   static final double kTargetAngleDegrees = 90.0f;
 
-  //Instantiate the motors and encoders
-  private final PWMVictorSPX m_leftMotor = new PWMVictorSPX(leftMotorPort);
-  private final PWMVictorSPX m_rightMotor = new PWMVictorSPX(rightMotorPort);
-  private final DifferentialDrive myRobot = new DifferentialDrive(m_leftMotor, m_rightMotor);
-  private final XboxController stick = new XboxController(joystickPort);
+  double rotateToAngleRate;
+  private double yaw;
 
-  private final Encoder leftEncoder = new Encoder(leftEncPortA, leftEncPortB);
-  private final Encoder rightEncoder = new Encoder(rightEncPortA, rightEncPortB);
+ 
+
   
-  //Instantiate the dashboard variables
-  private double leftSpeed;
-  private double rightSpeed;
-  private double leftDistance;
-  private double rightDistance;
+  
 
-  //Instantiate the PIDController
-  PIDController my_pid = new PIDController(Kp, Ki, Kd);
+    //Setup Constants
+    private static final int leftMotorPort = 0;
+    private static final int rightMotorPort = 1;
+    private static final int leftEncPortA =  0;
+    private static final int leftEncPortB = 1;
+    private static final int rightEncPortA = 2;
+    private static final int rightEncPortB = 3;
+    private static final int joystickPort = 0;
+
+    private final XboxController stick = new XboxController(joystickPort);
+
+    AHRS ahrs;
+    //PID Constants
+    //Here is the process I used for guessing the PID Gains...
+    /**
+     * P- Begin by starting at zero and Multiply X10 until it begins to move toward or oscilate.
+     * E.X. 0 -> .0000001
+     * Get as close to setpoint then one more until it oscilates
+     * fine-tune
+     * D- Add damping until it stops the oscillations. Begin with 1/10 of P.
+     * If it Oscilates the entire time, it is too high.
+     * If it does not get to the setpoint, it is too low* 
+     * *Caveat... This is what worked today, but the opposite of what they say, so when all else fails, try something else.
+     * I Add in (starting at 1/10 P) to smooth out any other errors.
+     * 
+     * This is similar (but not the same) as
+     * what is described here https://trickingrockstothink.com/blog_posts/2019/10/19/tuning_pid.html
+     */
+  
+    double kP = .09;
+    double kI = 0.001;
+    double kD = .004;
+    double desiredSpeed = 100;
+    double pidOutput;
+    double minSpeed = -.6;
+    double maxSpeed =.6;
+      
+  
+    private final PWMVictorSPX m_leftMotor = new PWMVictorSPX(leftMotorPort);
+    private final PWMVictorSPX m_rightMotor = new PWMVictorSPX(rightMotorPort);
+    private final DifferentialDrive myRobot = new DifferentialDrive(m_leftMotor, m_rightMotor);
+    //private final Joystick m_stick = new Joystick(joystickPort);
+    
+  
+    private final Encoder leftEncoder = new Encoder(leftEncPortA, leftEncPortB);
+    private final Encoder rightEncoder = new Encoder(rightEncPortA, rightEncPortB);
+    private double leftSpeed;
+    private double rightSpeed;
+    private double leftDistance;
+    private double rightDistance;
+    PIDController my_pid = new PIDController(kP, kI, kD);
+
+    //for turning
+  PIDController turnController = new PIDController(kP, kI, kD);
+  
+
+  private boolean turnControllerEnabled = false; //since this was depreciated, create a variable to accomplish the task. 
+  
+
 
 
   
@@ -108,14 +143,19 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     
-   // PIDController my_pid = new PIDController(Kp, Ki, Kd);
-   SmartDashboard.putNumber("P", Kp);
-   SmartDashboard.putNumber("I", Ki);
-   SmartDashboard.putNumber("D", Kd);
+   // PIDController my_pid = new PIDController(kP, kI, kD);
+   SmartDashboard.putNumber("P", kP);
+   SmartDashboard.putNumber("I", kI);
+   SmartDashboard.putNumber("D", kD);
    SmartDashboard.putNumber("Setpoint", desiredSpeed);
-   myRobot.setExpiration(0.1);
+   //control the drivetrain timeout.
+   //myRobot.setExpiration(0.1);
 
-    //Initialize the NavX
+   
+   
+  
+  
+    ///Initialize the NavX
       try {
           /***********************************************************************
 			 * navX-MXP:
@@ -133,12 +173,13 @@ public class Robot extends TimedRobot {
           DriverStation.reportError("Error instantiating navX-MXP:  " + ex.getMessage(), true);
       }
       //They instantiated the turn controller like this...
-      /*turnController = new PIDController(kP, kI, kD, kF, ahrs, this);
+      /**turnController = new PIDController(kP, kI, kD, kF, ahrs, this);
       turnController.setInputRange(-180.0f, 180.0f);
       turnController.setOutputRange(-1.0, 1.0);
       turnController.setAbsoluteTolerance(kToleranceDegrees);
       turnController.setContinuous(true);
-      turnController.disable();*/
+      turnController.disable();
+      */
   }
 
   /**
@@ -162,13 +203,15 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("right Distance", rightDistance);
     SmartDashboard.putNumber("pid Output", pidOutput);
     desiredSpeed = SmartDashboard.getNumber("Setpoint", desiredSpeed);
-    Kp =SmartDashboard.getNumber("P", Kp);
-    Ki = SmartDashboard.getNumber("I", Ki);
-    Kd = SmartDashboard.getNumber("D", Kd);
-    my_pid.setP(Kp);
-    my_pid.setI(Ki);
-    my_pid.setD(Kd);
-    SmartDashboard.putNumber("NewKP", Kp);
+    kP =SmartDashboard.getNumber("P", kP);
+    kI = SmartDashboard.getNumber("I", kI);
+    kD = SmartDashboard.getNumber("D", kD);
+    my_pid.setP(kP);
+    my_pid.setI(kI);
+    my_pid.setD(kD);
+    SmartDashboard.putNumber("NewkP", kP);
+    yaw = ahrs.getYaw();
+    SmartDashboard.putNumber(   "IMU_Yaw",yaw);
   }
 
   /**
@@ -204,12 +247,14 @@ public class Robot extends TimedRobot {
     myRobot.arcadeDrive(pidOutput, 0);
     
   }
+  
 
   /**
    * This function is called once when teleop is enabled.
    */
   @Override
   public void teleopInit() {
+    
   }
 
   /**
@@ -217,7 +262,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-    Timer.delay(0.020);		/* wait for one motor update time period (50Hz)     */
+   // Timer.delay(0.020);		/* wait for one motor update time period (50Hz)     */
           
           boolean zero_yaw_pressed = stick.getBButton();
           if ( zero_yaw_pressed ) {
@@ -240,7 +285,7 @@ public class Robot extends TimedRobot {
           SmartDashboard.putNumber(   "IMU_FusedHeading",     ahrs.getFusedHeading());
 
           /* These functions are compatible w/the WPI Gyro Class, providing a simple  */
-          /* path for upgrading from the Kit-of-Parts gyro to the navx-MXP            */
+          /* path for upgrading from the kIt-of-Parts gyro to the navx-MXP            */
           
           SmartDashboard.putNumber(   "IMU_TotalYaw",         ahrs.getAngle());
           SmartDashboard.putNumber(   "IMU_YawRateDPS",       ahrs.getRate());
@@ -323,8 +368,11 @@ public class Robot extends TimedRobot {
   /**
    * This function is called once when test mode is enabled.
    */
+
   @Override
   public void testInit() {
+    turnController.enableContinuousInput(-180.00, 180.00);
+    turnController.setTolerance(0, kToleranceDegrees);
   }
 
   /**
@@ -332,57 +380,56 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void testPeriodic() {
-    if (leftStick.getRawButton(0)) {
+    if (stick.getRawButton(1)) {
       /*
        * While this button is held down, rotate to target angle. Since a Tank drive
        * system cannot move forward simultaneously while rotating, all joystick input
        * is ignored until this button is released.
        */
-      if (!turnController.isEnabled()) {
-        turnController.setSetpoint(kTargetAngleDegrees);
-        rotateToAngleRate = 0; // This value will be updated in the pidWrite() method.
-        turnController.enable();
-      }
+      
+        //turnController.setSetpoint();
+        //rotateToAngleRate = 0; // This value will be updated in the pidWrite() method.
+        turnControllerEnabled = true;
+      
+      rotateToAngleRate = MathUtil.clamp(turnController.calculate(yaw, kTargetAngleDegrees), minSpeed, maxSpeed);
+      SmartDashboard.putNumber("Target Angle",rotateToAngleRate);
       double leftStickValue = rotateToAngleRate;
-      double rightStickValue = rotateToAngleRate;
+      double rightStickValue = -rotateToAngleRate;
       myRobot.tankDrive(leftStickValue, rightStickValue);
-    } else if (leftStick.getRawButton(1)) {
+    } else if (stick.getRawButton(2)) {
       /*
        * "Zero" the yaw (whatever direction the sensor is pointing now will become the
        * new "Zero" degrees.
        */
       ahrs.zeroYaw();
-    } else if (leftStick.getRawButton(2)) {
+    } else if (stick.getRawButton(3)) {
       /*
        * While this button is held down, the robot is in "drive straight" mode.
        * Whatever direction the robot was heading when "drive straight" mode was
        * entered will be maintained. The average speed of both joysticks is the
        * magnitude of motion.
        */
-      if (!turnController.isEnabled()) {
+      if (!turnControllerEnabled) {
         // Acquire current yaw angle, using this as the target angle.
         turnController.setSetpoint(ahrs.getYaw());
         rotateToAngleRate = 0; // This value will be updated in the pidWrite() method.
-        turnController.enable();
+        turnControllerEnabled=true;
       }
-      double magnitude = (leftStick.getY() + rightStick.getY()) / 2;
+      rotateToAngleRate = MathUtil.clamp(turnController.calculate(ahrs.getYaw()), minSpeed, maxSpeed);
+      double magnitude = stick.getY(Hand.kLeft) + stick.getY(Hand.kRight) / 2;
       double leftStickValue = magnitude + rotateToAngleRate;
       double rightStickValue = magnitude - rotateToAngleRate;
       myRobot.tankDrive(leftStickValue, rightStickValue);
     } else {
       /* If the turn controller had been enabled, disable it now. */
-      if (turnController.isEnabled()) {
-        turnController.disable();
+      if (turnControllerEnabled) {
+        turnControllerEnabled = false;
       }
       /* Standard tank drive, no driver assistance. */
-      myRobot.tankDrive(leftStick.getY(), rightStick.getY());
+      myRobot.tankDrive(stick.getY(Hand.kLeft), stick.getY(Hand.kRight));
     }
+    
   }
-
-  @Override
-  /* This function is invoked periodically by the PID Controller, */
-  /* based upon navX MXP yaw angle input and PID Coefficients. */
-  public void pidWrite(double output) {
-    rotateToAngleRate = output;
-  }
+ 
+  
 }
