@@ -7,10 +7,17 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.studica.frc.TitanQuad;
+import com.studica.frc.TitanQuadEncoder;
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -20,11 +27,47 @@ import com.studica.frc.TitanQuad;
  * project.
  */
 public class Robot extends TimedRobot {
+  //Constants
+  //left motors
+  private static final int frontLeftMotorPort = 0;
+  private static final int rearLeftMotorPort = 2;
+  
+  //right motors
+  private static final int frontRightMotorPort = 1;
+  private static final int rearRightMotorPort = 3;
+  
+  //Stick
+  private static final int JoystickPort = 0;
+  //Titan
+  private static final int titanID = 42;
+
+  private static int wheelDiameter = 80;
+  private static int cpr = 150;
+
+  //Gyro
+  private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
+ 
+  //Instantiate the motors
+  private TitanQuad frontLeft = new TitanQuad(titanID,15600, frontLeftMotorPort);
+  private TitanQuad rearLeft = new TitanQuad(titanID,15600, rearLeftMotorPort);
+  private TitanQuad frontRight = new TitanQuad(titanID,15600, frontRightMotorPort);
+  private TitanQuad rearRight = new TitanQuad(titanID,15600, rearRightMotorPort);
+
+  //Encoders
+  private TitanQuadEncoder frontLeftEnc = new TitanQuadEncoder(frontLeft, frontLeftMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
+  private TitanQuadEncoder rearLeftEnc = new TitanQuadEncoder(rearLeft, rearLeftMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
+  private TitanQuadEncoder frontRightEnc = new TitanQuadEncoder(frontRight, frontRightMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
+  private TitanQuadEncoder rearRightEnc = new TitanQuadEncoder(rearRight, rearRightMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
+
+  private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
+  private Joystick stick = new Joystick(JoystickPort);
+
+  //much of what follows before the overridden class is default logic.
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
-  private TitanQuad frontLeft = new TitanQuad(0,15600, 1);
+ 
   /**
    * This function is run when the robot is first started up and should be
    * used for any initialization code.
@@ -34,7 +77,10 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-    frontLeft.setVoltage(7.2);
+    rearRight.setInverted(true);
+    //rearLeft.setInverted(true);
+    robotDrive.setRightSideInverted(true);
+    
   }
 
   /**
@@ -47,6 +93,12 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+
+    //SmartDashboard.putNumber("fL Enc", frontLeftEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("rL Enc", rearLeftEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("fR Enc", frontRightEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("rr Enc", rearRightEnc.getEncoderDistance());
+    
   }
 
   /**
@@ -95,6 +147,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
+    robotDrive.driveCartesian(stick.getX(Hand.kLeft), stick.getY(Hand.kRight), stick.getRawAxis(3),m_gyro.getYaw());
   }
 
   /**
