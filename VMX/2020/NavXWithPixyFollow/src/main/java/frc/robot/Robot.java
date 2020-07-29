@@ -30,6 +30,10 @@ import edu.wpi.first.wpiutil.math.MathUtil;
 import io.github.pseudoresonance.pixy2api.*;
 import io.github.pseudoresonance.pixy2api.Pixy2CCC.Block;
 import io.github.pseudoresonance.pixy2api.links.I2CLink;
+//import the Custom PixyPID
+import frc.robot.PixyPID;
+//import our conversion class
+import frc.robot.Conversion;
 
 //ArrayList for the pixy block arrays
 import java.util.ArrayList;

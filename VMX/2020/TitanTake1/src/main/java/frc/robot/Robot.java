@@ -54,10 +54,14 @@ public class Robot extends TimedRobot {
   private TitanQuad rearRight = new TitanQuad(titanID,15600, rearRightMotorPort);
 
   //Encoders
-  private TitanQuadEncoder frontLeftEnc = new TitanQuadEncoder(frontLeft, frontLeftMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
-  private TitanQuadEncoder rearLeftEnc = new TitanQuadEncoder(rearLeft, rearLeftMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
-  private TitanQuadEncoder frontRightEnc = new TitanQuadEncoder(frontRight, frontRightMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
-  private TitanQuadEncoder rearRightEnc = new TitanQuadEncoder(rearRight, rearRightMotorPort, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter, (double)cpr/(double)wheelDiameter);
+  
+  private final TitanQuadEncoder frontLeftEnc =
+  new TitanQuadEncoder(frontLeft, frontLeftMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
+  private TitanQuadEncoder rearLeftEnc = new TitanQuadEncoder(rearLeft, rearLeftMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
+  private final TitanQuadEncoder rearRightEnc =
+  new TitanQuadEncoder(rearRight, rearRightMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
+  private final TitanQuadEncoder frontRightEnc =
+  new TitanQuadEncoder(frontRight, frontRightMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
 
   private MecanumDrive robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
   private Joystick stick = new Joystick(JoystickPort);
@@ -97,7 +101,8 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putNumber("fL Enc", frontLeftEnc.getEncoderDistance());
     //SmartDashboard.putNumber("rL Enc", rearLeftEnc.getEncoderDistance());
     //SmartDashboard.putNumber("fR Enc", frontRightEnc.getEncoderDistance());
-    //SmartDashboard.putNumber("rr Enc", rearRightEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("rr dis.", rearRightEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("rr speed.", rearRightEnc.getRPM());
     
   }
 
