@@ -30,9 +30,7 @@ import frc.robot.MyPID;
 
 /**
  * PIXY SPI EXAMPLE A few notes 1.) Two things need to be added to the
- * build.gradle file. See the attached tutorial document 2.) This code is for
- * using Chip Select 0 (CS0) and the onboard SPI Port 3.) If you are using SPI
- * mode, go into PixyMon and set the control mode to SPI
+ * build.gradle file. 
  */
 public class Robot extends TimedRobot {
   /**
