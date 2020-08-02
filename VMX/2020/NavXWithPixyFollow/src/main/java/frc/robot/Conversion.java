@@ -29,10 +29,10 @@ public class Conversion{
 
 
     //constructor
-    public Conversion(float input, float inputRangeMax, float inputRangeMin, 
+    public Conversion(float inputRangeMax, float inputRangeMin, 
      float outputRangeMax, float outputRangeMin){
 
-        this.input = input;
+        //this.input = input;
         this.inputRangeMax = inputRangeMax;
         this.inputRangeMin = inputRangeMin;
         this.outputRangeMax = outputRangeMax;

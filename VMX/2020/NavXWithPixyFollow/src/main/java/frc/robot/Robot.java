@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //Import Drive Code
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 //import encoder
 import edu.wpi.first.wpilibj.Encoder;
 
@@ -80,13 +80,18 @@ public class Robot extends TimedRobot {
    * what is described here https://trickingrockstothink.com/blog_posts/2019/10/19/tuning_pid.html
    */
 
-  double kP = .09;
+  double kP = 0.09;
   double kI = 0.001;
-  double kD = .004;
+  double kD = 0.004;
   double desiredSpeed = 100;
   double pidOutput;
-  double minSpeed = -.6;
-  double maxSpeed =.6;
+  double minSpeed = -1;
+  double maxSpeed = 1;
+
+  double followTurnP = 0.009;
+  double followTurnI = 0.001;
+  double followTurnD = 0.0002;
+  PIDController followTurn = new PIDController(followTurnP, followTurnI, followTurnD);
     
 
   private final PWMVictorSPX m_leftMotor = new PWMVictorSPX(leftMotorPort);
@@ -125,14 +130,18 @@ public class Robot extends TimedRobot {
   // Drive logic for following the target.
 
   // PID Constants
-  private int panP = 400;
+  private int panP = 350;
   private int panI = 0;
   private int panD = 600;
 
-  private int tiltP = 500;
+  private int tiltP = 0;
   private int tiltI = 0;
-  private int tiltD = 700;
+  private int tiltD = 0;
 
+  private Conversion myConverter = new Conversion(1000, 0, 90, -90);
+  double followTarget;
+//TODO: Add drive controller for  following
+//TODO: Upload PID through GIT
 
   @Override
   public void robotInit() {
@@ -142,6 +151,7 @@ public class Robot extends TimedRobot {
    SmartDashboard.putNumber("I", kI);
    SmartDashboard.putNumber("D", kD);
    SmartDashboard.putNumber("Setpoint", desiredSpeed);
+   SmartDashboard.putData("turn controller", followTurn);
 
    ///Initialize the NavX
    try {
@@ -167,6 +177,10 @@ public class Robot extends TimedRobot {
   panPID.setPIDs(panP, panI, panD);
   tiltPID = new PixyPID();
   tiltPID.setPIDs(tiltP, tiltI, tiltD);
+
+  //converter
+
+  
   }
 
   @Override
@@ -182,12 +196,12 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("right Distance", rightDistance);
     SmartDashboard.putNumber("pid Output", pidOutput);
     desiredSpeed = SmartDashboard.getNumber("Setpoint", desiredSpeed);
-    kP =SmartDashboard.getNumber("P", kP);
+    /**kP =SmartDashboard.getNumber("P", kP);
     kI = SmartDashboard.getNumber("I", kI);
     kD = SmartDashboard.getNumber("D", kD);
     my_pid.setP(kP);
     my_pid.setI(kI);
-    my_pid.setD(kD);
+    my_pid.setD(kD);*/
     SmartDashboard.putNumber("NewkP", kP);
     yaw = ahrs.getYaw();
     SmartDashboard.putNumber(   "IMU_Yaw",yaw);
@@ -209,79 +223,25 @@ public class Robot extends TimedRobot {
     // Drive with arcade drive.
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
-    pidOutput = my_pid.calculate(leftEncoder.getDistance(), desiredSpeed);
-    pidOutput = MathUtil.clamp(-pidOutput, -.6, .6);
+    pidOutput = my_pid.calculate(rightEncoder.getDistance(), desiredSpeed);
+    pidOutput = MathUtil.clamp(-pidOutput, -.4, .4);
 
     myRobot.arcadeDrive(pidOutput, 0);
     
   }
 
+  
   @Override
   public void teleopInit() {
-
-    //turn on the lights
-    //pixycam.setLamp((byte) 1, (byte) 1);
-    //Center the servos
-    pixycam.setServos(500, 500);
-  }
-
-  @Override
-  public void teleopPeriodic() {
-    myRobot.arcadeDrive(stick.getY(), stick.getX());
-  
-  //SmartDashboard.putBoolean( "Camera" , isCamera); //publish if we are connected
-   pixycam.getCCC().getBlocks( false , 255 , 255 ); //run getBlocks with arguments to have the camera
-    //SmartDashboard.putNumber( "Stuff" , pixycam.getCCC().getBlocks() );
-  //acquire target data
-    ArrayList<Block> blocks = pixycam.getCCC().getBlockCache(); //assign the data to an ArrayList for convinience
-    if (blocks.size() > 0 )
-      {
-        //Get the blocks
-       // String data = blocks.get( 0 ).toString(); // string containing target info
-       // double xcoord = blocks.get( 0 ).getX(); // x position of the largest target
-        //double ycoord = blocks.get( 0 ).getY(); // y position of the largest target
-        
-        //Calculate error for pan
-        panOffset = pixycam.getFrameWidth()/2 - blocks.get(0).getX();
-        tiltOffset = pixycam.getFrameHeight()/2 - blocks.get(0).getY();
-        //Send the error to the PID for it to work its magic
-        panPID.setError(panOffset);
-        tiltPID.setError(tiltOffset);
-        panPID.calculateMyPID();
-        tiltPID.calculateMyPID();
-        //Retrive the desired position (Pan)
-        panDesiredPosition = panPID.getDesiredPosition();
-        tiltDesiredPosition = tiltPID.getDesiredPosition(); 
-
-        pixycam.setServos(panDesiredPosition, tiltDesiredPosition);
-      }
-      SmartDashboard.putBoolean( "present" , true ); // show there is a target present
-      SmartDashboard.putNumber( "pan offset" ,panOffset);
-      //SmartDashboard.putNumber( "Ycoord" , ycoord);
-      //SmartDashboard.putString( "Data" , data );
-      SmartDashboard.putNumber( "pan" , panDesiredPosition );
-      SmartDashboard.putNumber("blocks", blocks.size());
-  }
-
-  @Override
-  public void disabledInit() {
-  }
-
-  @Override
-  public void disabledPeriodic() {
-  }
-
-  @Override
-  public void testInit() {
     turnController.enableContinuousInput(-180.00, 180.00);
     turnController.setTolerance(0, kToleranceDegrees);
   }
 
   /**
-   * This function is called periodically during test mode.
+   * This function is called periodically during teleop mode.
    */
   @Override
-  public void testPeriodic() {
+  public void teleopPeriodic() {
     if (stick.getRawButton(1)) {
       /*
        * While this button is held down, rotate to target angle. Since a Tank drive
@@ -332,5 +292,111 @@ public class Robot extends TimedRobot {
     }
     
   }
+
+  @Override
+  public void testInit() {
+
+    //turn on the lights
+    pixycam.setLamp((byte) 1, (byte) 1);
+    //Center the servos
+    pixycam.setServos(500, 500);
+
+    //Let's set the turn controller as a 180 degree controller.
+    followTurn.enableContinuousInput(-180.00, 180.00);
+    followTurn.setTolerance(0, kToleranceDegrees);
+    ahrs.zeroYaw();
+  }
+
+  @Override
+  public void testPeriodic() {
+    
+  
+  //SmartDashboard.putBoolean( "Camera" , isCamera); //publish if we are connected
+   pixycam.getCCC().getBlocks( false , 255 , 255 ); //run getBlocks with arguments to have the camera
+    //SmartDashboard.putNumber( "Stuff" , pixycam.getCCC().getBlocks() );
+  //acquire target data
+    ArrayList<Block> blocks = pixycam.getCCC().getBlockCache(); //assign the data to an ArrayList for convinience
+    if (blocks.size() > 0 )
+      {
+        //Get the blocks
+       // String data = blocks.get( 0 ).toString(); // string containing target info
+       // double xcoord = blocks.get( 0 ).getX(); // x position of the largest target
+        //double ycoord = blocks.get( 0 ).getY(); // y position of the largest target
+        
+        //Calculate error for pan
+        panOffset = pixycam.getFrameWidth()/2 - blocks.get(0).getX();
+        tiltOffset = pixycam.getFrameHeight()/2 - blocks.get(0).getY();
+        //Send the error to the PID for it to work its magic
+        panPID.setError(panOffset);
+        tiltPID.setError(tiltOffset);
+        panPID.calculateMyPID();
+        tiltPID.calculateMyPID();
+        //Retrive the desired position (Pan)
+        panDesiredPosition = panPID.getDesiredPosition();
+        tiltDesiredPosition = tiltPID.getDesiredPosition(); 
+
+        pixycam.setServos(panDesiredPosition, tiltDesiredPosition);
+        myConverter.setInput((float)panDesiredPosition);
+        myConverter.convert();
+        followTarget = myConverter.getOutput();
+        SmartDashboard.putNumber("Target Offset", followTarget);
+
+        //Now, let us try to follow the target...
+        
+
+        if (stick.getRawButton(1)) {
+          /*
+           * While this button is held down, rotate to target angle. Since a Tank drive
+           * system cannot move forward simultaneously while rotating, all joystick input
+           * is ignored until this button is released.
+           */
+          
+            //turnController.setSetpoint();
+            //rotateToAngleRate = 0; // This value will be updated in the pidWrite() method.
+            turnControllerEnabled = true;
+
+          
+          
+          rotateToAngleRate = MathUtil.clamp(followTurn.calculate(yaw, -followTarget), minSpeed, maxSpeed);
+          //SmartDashboard.putNumber("Target Angle",rotateToAngleRate);
+          double leftStickValue = rotateToAngleRate;
+          double rightStickValue = -rotateToAngleRate;
+          myRobot.tankDrive(leftStickValue, rightStickValue);
+        } else if (stick.getRawButton(2)) {
+          /*
+           * "Zero" the yaw (whatever direction the sensor is pointing now will become the
+           * new "Zero" degrees.
+           */
+          ahrs.zeroYaw();
+          myRobot.tankDrive(0, 0);
+          
+      }else {myRobot.tankDrive(0, 0);
+
+      }
+
+    } else {myRobot.tankDrive(0, 0);
+
+    }
+      SmartDashboard.putBoolean( "present" , true ); // show there is a target present
+      SmartDashboard.putNumber( "pan offset" ,panOffset);
+      //SmartDashboard.putNumber( "Ycoord" , ycoord);
+      //SmartDashboard.putString( "Data" , data );
+      SmartDashboard.putNumber( "pan" , panDesiredPosition );
+      SmartDashboard.putNumber("blocks", blocks.size());
+
+      
+  }
+
+  @Override
+  public void disabledInit() {
+    //turn the lights off
+    pixycam.setLamp((byte) 0, (byte) 0);
+  }
+
+  @Override
+  public void disabledPeriodic() {
+  }
+
+ 
 
 }
