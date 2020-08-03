@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.studica.frc.TitanQuad;
 import com.studica.frc.TitanQuadEncoder;
+import edu.wpi.first.cameraserver.CameraServer;
 
 /**
  * Sample program displaying the value of a quadrature encoder on the SmartDashboard. Quadrature
@@ -35,6 +36,8 @@ public class Robot extends TimedRobot {
 
 
   private static final int JoystickPort = 0;
+
+  
 
   /**
    * The Encoder object is constructed with 4 parameters, the last two being optional. The first two
@@ -65,6 +68,8 @@ public class Robot extends TimedRobot {
   
   @Override
   public void robotInit() {
+    CameraServer.getInstance().startAutomaticCapture();
+    frontRight.setInverted(true);
 
   }
 
@@ -74,13 +79,13 @@ public class Robot extends TimedRobot {
     rearLeft.set(stick.getY());
     rearRight.set(stick.getY());
     frontRight.set(stick.getY());
-    SmartDashboard.putNumber("frontLeft Encoder Distance", frontLeftEnc.getEncoderDistance());
-    SmartDashboard.putNumber("frontLeft Encoder Rate",frontLeftEnc.getRPM());
-    SmartDashboard.putNumber("Left Encoder Distance", rearLeftEnc.getEncoderDistance());
-    SmartDashboard.putNumber("Left Encoder Rate",rearLeftEnc.getRPM());
+    //SmartDashboard.putNumber("frontLeft Encoder Distance", frontLeftEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("frontLeft Encoder Rate",frontLeftEnc.getRPM());
+    //SmartDashboard.putNumber("Left Encoder Distance", rearLeftEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("Left Encoder Rate",rearLeftEnc.getRPM());
     SmartDashboard.putNumber("Encoder Distance", m_encoder.getEncoderDistance());
     SmartDashboard.putNumber("Encoder Rate", m_encoder.getSpeed());
-    SmartDashboard.putNumber("frontRight Encoder Distance", frontRightEnc.getEncoderDistance());
-    SmartDashboard.putNumber("frontRight Encoder Rate",frontRightEnc.getRPM());
+    //SmartDashboard.putNumber("frontRight Encoder Distance", frontRightEnc.getEncoderDistance());
+    //SmartDashboard.putNumber("frontRight Encoder Rate",frontRightEnc.getRPM());
   }
 }
