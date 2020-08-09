@@ -21,11 +21,12 @@ public class Robot extends TimedRobot {
   // We cannot use a sleep or delay method 
   // because that would leave the robot unresponsive for a spell
   private Timer LEDtimer = new Timer();
-  // 
-  int count = 0;
-  int strandSolidColor = 180;
-  int wipeColor = 137;
-  double currentTime;
+  // Create a counter to move the ixel up the strand
+  private int count = 0;
+  private int strandSolidColor = 180;
+  private int wipeColor = 137;
+  // Make the current time variable package private by declaring it in the main class
+  private double currentTime;
 
 
   @Override
