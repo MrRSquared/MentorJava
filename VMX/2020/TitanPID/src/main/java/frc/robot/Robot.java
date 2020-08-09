@@ -37,10 +37,10 @@ public class Robot extends TimedRobot {
 
   private static final int JoystickPort = 0;
 
-  double kP = 0.09;
-  double kI = 0.001;
-  double kD = 0.004;
-  double desiredDistance= 10;
+  double kP = 0.009;
+  double kI = 0.0005;
+  double kD = 0.00;
+  double desiredDistance= 100;
   double pidOutput;
   double minSpeed = -1;
   double maxSpeed = 1;
@@ -55,14 +55,13 @@ public class Robot extends TimedRobot {
   private Encoder leftEncoder = new Encoder(0, 1);
   
   
-  private final TitanQuadEncoder m_encoder =
-  new TitanQuadEncoder(rearRight, rearRightMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
+ // private final TitanQuadEncoder m_encoder = new TitanQuadEncoder(rearRight, rearRightMotorPort, (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1), (3.14 * 2 * 2) / (1120 * 1/1));
   
   private Joystick stick = new Joystick(JoystickPort);
 
   PIDController my_pid = new PIDController(kP, kI, kD);
 
-  private MecanumDrive m_robotDrive = new MecanumDrive(frontLeft, rearLeft, frontRight, rearRight);
+  private MecanumDrive m_robotDrive = new MecanumDrive( rearRight, frontRight, frontLeft,  rearLeft);
 
 
   /**
@@ -72,8 +71,10 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     CameraServer.getInstance().startAutomaticCapture();
-    frontRight.setInverted(true);
-    SmartDashboard.putNumber("Setpoint", desiredDistance);
+    frontLeft.setInverted(true);
+    rearLeft.setInverted(true);
+    //SmartDashboard.putNumber("Setpoint", desiredDistance);
+    leftEncoder.setReverseDirection(true);
   }
 
   /**
@@ -86,9 +87,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    desiredDistance = SmartDashboard.getNumber("Setpoint", desiredDistance);
-    encoderDistance=  m_encoder.getEncoderDistance();
-    leftSpeed = leftEncoder.getRate();
+    //desiredDistance = SmartDashboard.getNumber("Setpoint", desiredDistance);
+    encoderDistance=  leftEncoder.getDistance();
+    //leftSpeed = leftEncoder.getRate();
     SmartDashboard.putNumber("Encoder Distance", encoderDistance);
     SmartDashboard.putNumber("left encoder", leftSpeed);
     
@@ -125,7 +126,7 @@ public class Robot extends TimedRobot {
     //SmartDashboard.putNumber("frontLeft Encoder Rate",frontLeftEnc.getRPM());
     //SmartDashboard.putNumber("Left Encoder Distance", rearLeftEnc.getEncoderDistance());
     //SmartDashboard.putNumber("Left Encoder Rate",rearLeftEnc.getRPM());
-    SmartDashboard.putNumber("Encoder Distance", m_encoder.getEncoderDistance());
+    //SmartDashboard.putNumber("Encoder Distance", m_encoder.getEncoderDistance());
     
     //SmartDashboard.putNumber("Encoder Rate", m_encoder.getSpeed());
     //SmartDashboard.putNumber("frontRight Encoder Distance", frontRightEnc.getEncoderDistance());
@@ -144,7 +145,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.driveCartesian(stick.getRawAxis(1), stick.getRawAxis(4), stick.getRawAxis(3));
+    m_robotDrive.driveCartesian(stick.getRawAxis(0), stick.getRawAxis(4), stick.getRawAxis(1));
     
   }
 
@@ -167,7 +168,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void testInit() {
-    m_encoder.reset();
+   leftEncoder.reset();
 
   }
 
@@ -176,9 +177,14 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void testPeriodic() {
-    pidOutput = my_pid.calculate(encoderDistance, desiredDistance);
-    pidOutput = MathUtil.clamp(-pidOutput, -.6, .6);
-    m_robotDrive.driveCartesian(pidOutput, stick.getRawAxis(4), stick.getRawAxis(3));
+    if (stick.getRawButton(1)){
+   pidOutput = my_pid.calculate(encoderDistance, desiredDistance);
+   pidOutput = MathUtil.clamp(-pidOutput, -.5, .5);
+   m_robotDrive.driveCartesian(0, 0, pidOutput);
+    } else{
+      m_robotDrive.driveCartesian(0, 0, 0);
+
+    }
     
   }
 }
