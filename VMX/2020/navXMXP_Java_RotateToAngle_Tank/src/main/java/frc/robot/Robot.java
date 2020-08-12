@@ -63,7 +63,7 @@ public class Robot extends TimedRobot {
 
 
   //NavX Specific Constants
-  static final double kToleranceDegrees = 2.0f;    
+  static final double kToleranceDegrees = 5.0f;    
     
   static final double kTargetAngleDegrees = 90.0f;
 

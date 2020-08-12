@@ -170,9 +170,9 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
     //desiredDistance = SmartDashboard.getNumber("Setpoint", desiredDistance);
     encoderDistance=  leftEncoder.getDistance();
-    //leftSpeed = leftEncoder.getRate();
+    leftSpeed = leftEncoder.getRate();
     SmartDashboard.putNumber("Encoder Distance", encoderDistance);
-    SmartDashboard.putNumber("left encoder", leftSpeed);
+    SmartDashboard.putNumber("Encoder Speed", leftSpeed);
 
     yaw = ahrs.getYaw();
     SmartDashboard.putNumber(   "IMU_Yaw",yaw);
@@ -316,7 +316,7 @@ public class Robot extends TimedRobot {
       //double leftStickValue = magnitude + rotateToAngleRate;
       double rightStickValue =  rotateToAngleRate;
       //myRobot.tankDrive(leftStickValue, rightStickValue);
-      m_robotDrive.driveCartesian(-magnitude, rightStickValue, 0);
+      m_robotDrive.driveCartesian(0, rightStickValue, magnitude);
     } else {
       /* If the turn controller had been enabled, disable it now. */
       if (turnControllerEnabled) {
