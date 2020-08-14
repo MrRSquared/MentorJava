@@ -17,10 +17,8 @@ import java.util.ArrayList;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Victor;
-import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpiutil.math.MathUtil;
 import io.github.pseudoresonance.pixy2api.*;
 import io.github.pseudoresonance.pixy2api.Pixy2CCC.Block;
 import io.github.pseudoresonance.pixy2api.links.I2CLink;
@@ -29,10 +27,9 @@ import frc.robot.MyPID;
 //import our conversion class
 
 /**
- * PIXY SPI EXAMPLE A few notes 1.) Two things need to be added to the
- * build.gradle file. See the attached tutorial document 2.) This code is for
- * using Chip Select 0 (CS0) and the onboard SPI Port 3.) If you are using SPI
- * mode, go into PixyMon and set the control mode to SPI
+ * PIXY I2C EXAMPLE A few notes 1.) Two things need to be added to the
+ * build.gradle file. See this project's build file and the comments therin. 2.) This code is for
+ * using I2C. As such, you need to set the Pixy to I2C in PixyMon.
  */
 public class Robot extends TimedRobot {
   /**
@@ -63,26 +60,16 @@ public class Robot extends TimedRobot {
   private int tiltI = 0;
   private int tiltD = 700;
 
-  // Drive PID setup
-  private PIDController drivePIDX;
-  private double driveXP = -.2;
-  private double driveXI = 0;
-  private double driveXD = 0;
 
-  //private DifferentialDrive m_drive;
   private boolean followToggle;
 
   Victor m_left = new Victor(0);
   Victor m_right = new Victor(1);
   DifferentialDrive m_drive = new DifferentialDrive(m_left, m_right);
-  private double leftSpeed = 0;
-  private double rightSpeed = 0;
-  private Conversion convertDriveSpeed = new Conversion(500, 1000, 0, 1, -1);
+
 
   //Joystick
   private Joystick stick = new Joystick(0);
-
-  double minCommand = .35;
 
 @Override
 public void robotInit () {
@@ -92,15 +79,7 @@ public void robotInit () {
  panPID = new MyPID();
  panPID.setPIDs(panP, panI, panD);
  tiltPID = new MyPID();
- tiltPID.setPIDs(tiltP, tiltI, tiltD);
- //SmartDashboard.putNumber("DriveXP", driveXP);
-  
-  //Drivetrain logic
-  //PID
-  // Creates a PIDController with gains kP, kI, and kD
-  //drivePIDX = new PIDController(driveXP,driveXI, driveXD);
-  SmartDashboard.putNumber("MinCommand",0);
-  
+ tiltPID.setPIDs(tiltP, tiltI, tiltD);  
 }
 
 @Override
@@ -143,12 +122,12 @@ public void teleopPeriodic () {
       {
         //Get the blocks
        // String data = blocks.get( 0 ).toString(); // string containing target info
-       // double xcoord = blocks.get( 0 ).getX(); // x position of the largest target
-        //double ycoord = blocks.get( 0 ).getY(); // y position of the largest target
+       // double xcoord = blocks.get( 0 ).getX(); 
+        //double ycoord = blocks.get( 0 ).getY(); 
         
         //Calculate error for pan
-        panOffset = pixycam.getFrameWidth()/2 - blocks.get(0).getX();
-        tiltOffset = pixycam.getFrameHeight()/2 - blocks.get(0).getY();
+        panOffset = pixycam.getFrameWidth()/2 - blocks.get(0).getX();  // x position of the largest target
+        tiltOffset = pixycam.getFrameHeight()/2 - blocks.get(0).getY(); // y position of the largest target
         //Send the error to the PID for it to work its magic
         panPID.setError(panOffset);
         tiltPID.setError(tiltOffset);
@@ -159,59 +138,15 @@ public void teleopPeriodic () {
         tiltDesiredPosition = tiltPID.getDesiredPosition(); 
 
         pixycam.setServos(panDesiredPosition, tiltDesiredPosition);
-        driveXP = SmartDashboard.getNumber("DriveXP", -.2);
-
-        double sendIt = driveXP;
         
 
         SmartDashboard.putNumber("desiredPosition",panDesiredPosition);
-      //Drive
       
 
-        //double driveXVelocity = MathUtil.clamp(drivePIDX.calculate((panOffset/100), 0), -.8, .8);
-        
-
-        
-
-        if (stick.getRawButton(3)){
-
-          convertDriveSpeed.setInput(panDesiredPosition);
-          convertDriveSpeed.convert();
-          double driveError = convertDriveSpeed.getOutput();
-          double steeringAdjust = driveXP*driveError;
-          SmartDashboard.putNumber("SteeringAdjust",steeringAdjust);
-
-          if (driveError>0){
-            steeringAdjust = driveXP*driveError-minCommand;
-
-          } else if (driveError<0){
-            steeringAdjust = driveXP*driveError+minCommand;
-          }
-          leftSpeed += steeringAdjust;
-          MathUtil.clamp(leftSpeed, -0.8, 0.8);
-          rightSpeed -= steeringAdjust;
-          MathUtil.clamp(rightSpeed,-0.8,0.8);
-
-          m_drive.tankDrive(leftSpeed, rightSpeed);
-          SmartDashboard.putNumber("Motor",leftSpeed );
-          
-        }
-        if (stick.getRawButton(4)){
-
-          m_drive.tankDrive(minCommand, minCommand);
-        }
-
-
-      
-      //m_drive.arcadeDrive(0, 0);*/
-
-
-    SmartDashboard.putBoolean( "present" , true ); // show there is a target present
-    SmartDashboard.putNumber( "pan offset" ,panOffset);
-    //SmartDashboard.putNumber( "Ycoord" , ycoord);
-    //SmartDashboard.putString( "Data" , data );
-    SmartDashboard.putNumber( "pan" , panDesiredPosition );
-      SmartDashboard.putNumber("blocks", blocks.size());
+        SmartDashboard.putBoolean( "present" , true ); // show there is a target present
+        SmartDashboard.putNumber( "pan offset" ,panOffset);
+        SmartDashboard.putNumber( "pan" , panDesiredPosition );
+        SmartDashboard.putNumber("blocks", blocks.size());
 
 
     }
